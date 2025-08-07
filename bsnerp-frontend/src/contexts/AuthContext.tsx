@@ -32,17 +32,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUser = async (token: string) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://172.16.8.2:8000'
+      const apiUrl = 'http://172.16.8.2:8000'
+      console.log('Fetching user with token:', token.substring(0, 20) + '...')
+      
       const response = await fetch(`${apiUrl}/api/auth/me`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
         }
       })
       
+      console.log('Fetch user response status:', response.status)
+      
       if (response.ok) {
         const userData = await response.json()
+        console.log('User data fetched successfully:', userData)
         setUser(userData)
       } else {
+        console.log('Failed to fetch user, clearing tokens')
         localStorage.removeItem('access_token')
         localStorage.removeItem('refresh_token')
       }
@@ -58,34 +65,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string, rememberMe = false, twoFactorCode?: string) => {
     console.log('Login attempt:', { email, rememberMe })
     
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://172.16.8.2:8000'
-    const response = await fetch(`${apiUrl}/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        email,
-        password,
-        remember_me: rememberMe,
-        two_factor_code: twoFactorCode
+    try {
+      const apiUrl = 'http://172.16.8.2:8000'
+      console.log('Using API URL:', apiUrl)
+      
+      const response = await fetch(`${apiUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          remember_me: rememberMe,
+          two_factor_code: twoFactorCode
+        })
       })
-    })
 
-    console.log('Login response status:', response.status)
+      console.log('Login response status:', response.status)
+      console.log('Login response ok:', response.ok)
 
-    if (!response.ok) {
-      const error = await response.json()
-      console.error('Login error:', error)
-      throw new Error(error.detail || 'فشل في تسجيل الدخول')
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Login error response:', errorText)
+        let errorMessage = 'فشل في تسجيل الدخول'
+        try {
+          const errorData = JSON.parse(errorText)
+          errorMessage = errorData.detail || errorMessage
+        } catch (e) {
+          console.error('Failed to parse error response:', e)
+        }
+        throw new Error(errorMessage)
+      }
+
+      const data = await response.json()
+      console.log('Login success:', data)
+      
+      if (!data.access_token || !data.refresh_token || !data.user) {
+        console.error('Invalid response data:', data)
+        throw new Error('استجابة غير صحيحة من الخادم')
+      }
+      
+      localStorage.setItem('access_token', data.access_token)
+      localStorage.setItem('refresh_token', data.refresh_token)
+      setUser(data.user)
+      console.log('User set successfully:', data.user)
+      
+    } catch (error) {
+      console.error('Login function error:', error)
+      throw error
     }
-
-    const data = await response.json()
-    console.log('Login success:', data)
-    localStorage.setItem('access_token', data.access_token)
-    localStorage.setItem('refresh_token', data.refresh_token)
-    setUser(data.user)
-    console.log('User set:', data.user)
   }
 
   const logout = () => {
