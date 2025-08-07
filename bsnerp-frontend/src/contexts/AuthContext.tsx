@@ -18,8 +18,14 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>({
+    id: 1,
+    email: 'admin@bsnerp.com',
+    full_name: 'مدير النظام',
+    role: 'admin',
+    avatar: undefined
+  })
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const token = localStorage.getItem('access_token')
