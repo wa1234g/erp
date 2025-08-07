@@ -32,7 +32,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUser = async (token: string) => {
     try {
-      const response = await fetch(`${(import.meta as any).env.VITE_API_URL || 'http://localhost:8000'}/api/auth/me`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://172.16.8.2:8000'
+      const response = await fetch(`${apiUrl}/api/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -57,7 +58,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string, rememberMe = false, twoFactorCode?: string) => {
     console.log('Login attempt:', { email, rememberMe })
     
-    const response = await fetch(`${(import.meta as any).env.VITE_API_URL || 'http://localhost:8000'}/api/auth/login`, {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://172.16.8.2:8000'
+    const response = await fetch(`${apiUrl}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
